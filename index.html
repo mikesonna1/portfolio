@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma Boutique V5000</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.14.1/gsap.min.js"></script>
+</head>
+<body class="light">
+
+    <!-- NAVBAR -->
+    <header class="navbar-top">
+        <div class="navbar-main">
+            <a href="#" class="logo">MaBoutique</a>
+            <div class="search-bar">
+                <input type="text" placeholder="Rechercher un produit...">
+                <button>Rechercher</button>
+            </div>
+            <nav class="nav-links" id="nav-links">
+                <a href="#" class="nav-item">Accueil</a>
+                <a href="#products" class="nav-item">Produits</a>
+                <a href="#" class="nav-item">Panier</a>
+                <a href="#contact" class="nav-item">Contact</a>
+                <button id="mode-toggle" class="nav-item">🌙</button>
+            </nav>
+            <button class="burger" id="burger">☰</button>
+        </div>
+    </header>
+
+    <!-- HERO BANNER -->
+    <section class="hero-banner">
+        <div class="hero-content">
+            <h1>Bienvenue sur Ma Boutique V5000</h1>
+            <p>Découvrez nos produits exceptionnels au meilleur prix !</p>
+            <div class="hero-buttons">
+                <a href="#products" class="btn-primary">Voir les produits</a>
+                <a href="#contact" class="btn-secondary">Contactez-nous</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FILTRES PRODUITS (Sticky) -->
+    <section class="product-filters sticky" style="text-align:center; margin:30px 0; background: var(--white); padding:15px 0; z-index:100;">
+        <label>Trier par prix : </label>
+        <select id="price-filter">
+            <option value="none">Aucun</option>
+            <option value="asc">Croissant</option>
+            <option value="desc">Décroissant</option>
+        </select>
+        <label>Catégorie : </label>
+        <select id="category-filter">
+            <option value="all">Toutes</option>
+            <option value="tech">Tech</option>
+            <option value="vetements">Vêtements</option>
+            <option value="autres">Autres</option>
+        </select>
+    </section>
+
+    <!-- PRODUCTS GRID -->
+    <section id="products" class="products-grid">
+        <!-- Skeleton loader -->
+        <div class="product-card skeleton">
+            <div class="product-image-container"></div>
+            <div class="product-info">
+                <div class="skeleton-text" style="width:70%; height:20px;"></div>
+                <div class="skeleton-text" style="width:40%; height:18px; margin-top:10px;"></div>
+            </div>
+        </div>
+        <div class="product-card skeleton">
+            <div class="product-image-container"></div>
+            <div class="product-info">
+                <div class="skeleton-text" style="width:70%; height:20px;"></div>
+                <div class="skeleton-text" style="width:40%; height:18px; margin-top:10px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MINI PANIER FLOTTANT -->
+    <div id="mini-cart" style="position:fixed; bottom:20px; right:20px; background:var(--primary); color:#fff; padding:15px 25px; border-radius:10px; cursor:pointer; z-index:1000;">
+        🛒 Panier : <span id="cart-count">0</span> produit(s)
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="contact">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>MaBoutique</h4>
+                <ul>
+                    <li><a href="#">À propos</a></li>
+                    <li><a href="#">Nos services</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Politique de retour</a></li>
+                    <li><a href="#">Mentions légales</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Réseaux sociaux</h4>
+                <ul>
+                    <li><a href="#">Facebook</a></li>
+                    <li><a href="#">Instagram</a></li>
+                    <li><a href="#">Twitter</a></li>
+                </ul>
+            </div>
+        </div>
+        <p style="text-align:center; color:rgba(255,255,255,0.6); margin-bottom:10px;">&copy; 2025 MaBoutique. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        const burger = document.getElementById('burger');
+        const navLinks = document.getElementById('nav-links');
+        const modeToggle = document.getElementById('mode-toggle');
+        const body = document.body;
+        const miniCart = document.getElementById('mini-cart');
+        let cartCount = 0;
+
+        burger.addEventListener('click', ()=>{navLinks.classList.toggle('active');});
+        modeToggle.addEventListener('click', ()=>{
+            body.classList.toggle('dark');
+            body.classList.toggle('light');
+            modeToggle.textContent = body.classList.contains('dark') ? '☀️' : '🌙';
+        });
+
+        let allProducts = [];
+        async function loadProducts() {
+            try{
+                const res = await fetch('http://localhost:5000/api/products');
+                if(!res.ok) throw new Error("Backend non dispo");
+                allProducts = await res.json();
+                renderProducts(allProducts);
+            } catch(err){console.error("Erreur backend:",err);}
+        }
+
+        function renderProducts(products){
+            const container = document.querySelector('.products-grid');
+            container.innerHTML = '';
+            products.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.dataset.category = p.category;
+                card.innerHTML = `
+                    <div class="product-image-container">
+                        <img src="${p.image}" alt="${p.name}">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">${p.name}</h3>
+                        <p class="product-price">€${p.price.toFixed(2)}</p>
+                        <p>${p.description || ''}</p>
+                        <button class="add-cart">Ajouter au panier</button>
+                    </div>`;
+                container.appendChild(card);
+
+                // Hover 3D avec GSAP
+                card.addEventListener('mousemove', e=>{
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width/2;
+                    const centerY = rect.height/2;
+                    const rotateX = ((y - centerY)/centerY)*10;
+                    const rotateY = ((x - centerX)/centerX)*10;
+                    gsap.to(card, {rotateX:-rotateX, rotateY:rotateY, scale:1.05, duration:0.3});
+                });
+                card.addEventListener('mouseleave', ()=>{gsap.to(card,{rotateX:0, rotateY:0, scale:1, duration:0.5});});
+
+                // Ajouter au panier
+                card.querySelector('.add-cart').addEventListener('click', ()=>{
+                    cartCount++;
+                    document.getElementById('cart-count').textContent = cartCount;
+                    gsap.fromTo(miniCart,{y:50, opacity:0},{y:0, opacity:1, duration:0.5});
+                });
+
+                // Animation d'entrée produit
+                gsap.from(card,{opacity:0, y:50, duration:0.8, stagger:0.1});
+            });
+        }
+
+        // Filtres
+        document.getElementById('price-filter').addEventListener('change', applyFilters);
+        document.getElementById('category-filter').addEventListener('change', applyFilters);
+        function applyFilters(){
+            let filtered = [...allProducts];
+            const cat = document.getElementById('category-filter').value;
+            if(cat!=='all') filtered = filtered.filter(p=>p.category===cat);
+            const price = document.getElementById('price-filter').value;
+            if(price==='asc') filtered.sort((a,b)=>a.price-b.price);
+            if(price==='desc') filtered.sort((a,b)=>b.price-a.price);
+            renderProducts(filtered);
+        }
+
+        loadProducts();
+    </script>
+
+    <style>
+        .sticky{position:sticky; top:0; box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+    </style>
+
+</body>
+</html>
